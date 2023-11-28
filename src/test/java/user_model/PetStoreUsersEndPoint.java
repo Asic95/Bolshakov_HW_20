@@ -29,6 +29,19 @@ public class PetStoreUsersEndPoint {
                 .post(Config.CREATE_USER)
                 .then().extract().response();
     }
+        public void updateUser(String username, User user) {
+        Gson gson = new Gson();
+        String json;
+        json = gson.toJson(user);
+
+        given()
+                .baseUri(Config.PETSTORE_BASE_URL)
+                .contentType("application/json")
+                .body(json)
+                .when()
+                .put(Config.USER_BY_USERNAME, username)
+                .then().extract().response();
+    }
 
     public Response deleteUser(String username) {
         return given()

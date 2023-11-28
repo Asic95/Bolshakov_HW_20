@@ -2,6 +2,7 @@ package apitests;
 
 import com.google.gson.Gson;
 import io.restassured.response.Response;
+import org.testng.annotations.BeforeMethod;
 import org.testng.annotations.Test;
 import org.testng.asserts.SoftAssert;
 import user_model.PetStoreUsersEndPoint;
@@ -16,9 +17,15 @@ public class petStoreUsers_crud {
     static final String firstName = "Vasyl";
     static final String lastName = "Tymchenko";
     static final String email = "vasya@ukr.net";
+    static final String email_updated = "vasya132@ukr.net";
     static final String password = "vasya";
     static final String phone = "5555555";
     static final int userStatus = 1;
+
+    @BeforeMethod
+    public void clean_up() {
+        new PetStoreUsersEndPoint().deleteUser(username);
+    }
 
     @Test
     public void crete_user() {
@@ -26,9 +33,7 @@ public class petStoreUsers_crud {
         UserPostResponce userPostResponce;
         SoftAssert softAssert = new SoftAssert();
 
-
         // Given
-        new PetStoreUsersEndPoint().deleteUser(username);
         User user = new User(id, username, firstName, lastName, email, password, phone, userStatus);
 
         // When
@@ -50,7 +55,6 @@ public class petStoreUsers_crud {
         SoftAssert softAssert = new SoftAssert();
 
         // Given
-        new PetStoreUsersEndPoint().deleteUser(username);
         user = new User(id, username, firstName, lastName, email, password, phone, userStatus);
         new PetStoreUsersEndPoint()
                 .createUser(user);
@@ -70,8 +74,40 @@ public class petStoreUsers_crud {
         softAssert.assertEquals(user.getPhone(), phone);
         softAssert.assertEquals(user.getUserStatus(), userStatus);
         softAssert.assertAll();
-
     }
+
+    @Test
+    public void update_user_data() {
+        User user, user_with_updates;
+        Gson gson = new Gson();
+        SoftAssert softAssert = new SoftAssert();
+
+        // Given
+        user = new User(id, username, firstName, lastName, email, password, phone, userStatus);
+        new PetStoreUsersEndPoint()
+                .createUser(user);
+
+        // When
+        user_with_updates = new User(id, username, firstName, lastName, email_updated, password, phone, userStatus);
+        new PetStoreUsersEndPoint()
+                .updateUser(username, user_with_updates);
+
+        Response usersResponse = new PetStoreUsersEndPoint()
+                .getUserByUsername(username);
+
+        // Then
+        user = gson.fromJson(usersResponse.body().asString(), User.class);
+        softAssert.assertEquals(user.getID(), id);
+        softAssert.assertEquals(user.getUserName(), username);
+        softAssert.assertEquals(user.getFirstName(), firstName);
+        softAssert.assertEquals(user.getLastName(), lastName);
+        softAssert.assertEquals(user.getEmail(), email_updated);            // звіряємо чи змінився email на новий
+        softAssert.assertEquals(user.getPassword(), password);
+        softAssert.assertEquals(user.getPhone(), phone);
+        softAssert.assertEquals(user.getUserStatus(), userStatus);
+        softAssert.assertAll();
+    }
+
 
     @Test
     public void delete_user() {
@@ -81,7 +117,6 @@ public class petStoreUsers_crud {
         SoftAssert softAssert = new SoftAssert();
 
         // Given
-        new PetStoreUsersEndPoint().deleteUser(username);
         user = new User(id, username, firstName, lastName, email, password, phone, userStatus);
         new PetStoreUsersEndPoint()
                 .createUser(user);
@@ -90,7 +125,7 @@ public class petStoreUsers_crud {
         Response usersResponse = new PetStoreUsersEndPoint()
                 .deleteUser(username);
         deletedData = gson.fromJson(usersResponse.body().asString(), UserDeleteResponce.class);
-        softAssert.assertEquals(deletedData.getCode(),200);
+        softAssert.assertEquals(deletedData.getCode(), 200);
         softAssert.assertEquals(deletedData.getType(), "unknown");
         softAssert.assertEquals(deletedData.getMessage(), username);
 
